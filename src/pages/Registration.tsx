@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { CloudUpload, CircleCheck, ChevronRight, ChevronLeft, User, Briefcase, Tags, FileText, Loader2, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -36,7 +36,9 @@ type RegistrationData = {
 };
 
 export default function Registration() {
-  const { register, handleSubmit, formState: { errors } } = useForm<RegistrationData>();
+  const { register, setValue, trigger, handleSubmit, formState: { errors } } = useForm<RegistrationData>();
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const documentsInputRef = useRef<HTMLInputElement | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -127,6 +129,39 @@ export default function Registration() {
     }
   };
 
+  const sanitizeFileName = (name: string) =>
+    name
+      .replace(/[^a-zA-Z0-9._-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+  const handleDocumentsChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    setSelectedFiles(files);
+    setValue('documents', event.target.files as unknown as FileList, { shouldValidate: true });
+    await trigger('documents');
+  };
+
+  const removeSelectedFile = async (index: number) => {
+    setSelectedFiles((prev) => {
+      const nextFiles = index >= 0 ? [...prev] : [];
+      if (index >= 0) {
+        nextFiles.splice(index, 1);
+      }
+
+      const dataTransfer = new DataTransfer();
+      nextFiles.forEach((file) => dataTransfer.items.add(file));
+
+      if (documentsInputRef.current) {
+        documentsInputRef.current.files = dataTransfer.files;
+      }
+
+      setValue('documents', dataTransfer.files as unknown as FileList, { shouldValidate: true });
+      return nextFiles;
+    });
+    await trigger('documents');
+  };
+
   const onSubmit = async (data: RegistrationData) => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -152,10 +187,12 @@ export default function Registration() {
         if (data.documents && data.documents.length > 0) {
           for (let i = 0; i < data.documents.length; i++) {
             const file = data.documents[i];
-            const filePath = `${registrationId}/${file.name}`;
+            const safeFileName = sanitizeFileName(file.name) || `document-${i + 1}`;
+            const filePath = `${registrationId}/${Date.now()}-${i + 1}-${safeFileName}`;
+
             const { error: uploadError } = await supabase.storage
               .from(bucketName)
-              .upload(filePath, file, { upsert: false });
+              .upload(filePath, file, { upsert: true });
 
             if (uploadError) {
               throw uploadError;
@@ -165,7 +202,7 @@ export default function Registration() {
               .from(bucketName)
               .createSignedUrl(filePath, 60 * 60 * 24);
 
-            if (signedError || !signedData.signedUrl) {
+            if (signedError || !signedData?.signedUrl) {
               throw signedError ?? new Error('Unable to create secure file URL.');
             }
 
@@ -589,17 +626,62 @@ export default function Registration() {
 
                       <label className="block text-sm font-medium text-slate-700 mb-2">Upload Supporting Documents <span className="text-red-500">*</span></label>
                       <div className="border-2 border-dashed border-slate-300 rounded-lg p-10 text-center hover:bg-slate-50 transition-colors relative">
-                        <input 
-                          type="file" 
-                          multiple 
-                          {...register("documents", { required: true })} 
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
+                        {(() => {
+                          const documentsRegistration = register('documents', {
+                            validate: () => selectedFiles.length > 0 || 'Please upload your documents',
+                          });
+
+                          return (
+                            <input
+                              type="file"
+                              multiple
+                              name={documentsRegistration.name}
+                              onChange={(event) => {
+                                documentsRegistration.onChange(event);
+                                handleDocumentsChange(event);
+                              }}
+                              onBlur={documentsRegistration.onBlur}
+                              ref={(element) => {
+                                documentsRegistration.ref(element);
+                                documentsInputRef.current = element;
+                              }}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                          );
+                        })()}
                         <CloudUpload className="w-10 h-10 text-chamber-blue mx-auto mb-3" />
                         <p className="text-sm font-semibold text-chamber-navy mb-1">Click to Upload or Drag and Drop files here</p>
                         <p className="text-xs text-slate-500">PDF, JPG, PNG (Max 10MB per file)</p>
                       </div>
-                      {errors.documents && <span className="text-red-500 text-xs mt-1 block">Please upload your documents</span>}
+                      {selectedFiles.length > 0 && (
+                        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold text-slate-700">Selected documents ({selectedFiles.length}):</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSelectedFile(-1)}
+                              className="text-xs text-chamber-blue hover:text-chamber-navy"
+                            >
+                              Clear All
+                            </button>
+                          </div>
+                          <ul className="list-disc list-inside text-slate-600 text-sm space-y-2">
+                            {selectedFiles.map((file, index) => (
+                              <li key={`${file.name}-${index}`} className="flex items-center justify-between gap-3">
+                                <span className="truncate">{file.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeSelectedFile(index)}
+                                  className="text-xs text-red-600 hover:text-red-800"
+                                >
+                                  Remove
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {errors.documents && <span className="text-red-500 text-xs mt-1 block">{errors.documents.message || 'Please upload your documents'}</span>}
                     </div>
 
                     <SectionHeader number="6" title="Declaration & Signature" />

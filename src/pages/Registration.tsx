@@ -3,10 +3,8 @@ import { useForm } from 'react-hook-form';
 import { CloudUpload, CircleCheck, ChevronRight, ChevronLeft, User, Briefcase, Tags, FileText, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from '../components/Logo';
-import { initAuth, loginWithEmail, registerWithEmail, db, storage } from '../firebase';
-import { User as FirebaseUser } from 'firebase/auth';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { bucketName, getSession, onAuthStateChange, signIn, signUp, signOut, supabase } from '../supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 type RegistrationData = {
   firstName: string;
@@ -45,7 +43,7 @@ export default function Registration() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   
   const [needsAuth, setNeedsAuth] = useState(true);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authEmail, setAuthEmail] = useState('');
@@ -56,14 +54,30 @@ export default function Registration() {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = initAuth(
-      (user) => {
+    let authSubscription: { unsubscribe: () => void } | null = null;
+
+    const init = async () => {
+      const { data } = await getSession();
+      const currentUser = data.session?.user ?? null;
+      if (currentUser) {
+        setUser(currentUser);
         setNeedsAuth(false);
-        setUser(user);
-      },
-      () => setNeedsAuth(true)
-    );
-    return () => unsubscribe();
+      } else {
+        setUser(null);
+        setNeedsAuth(true);
+      }
+
+      const { data: listener } = onAuthStateChange((_event, session) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        setNeedsAuth(!currentUser);
+      });
+
+      authSubscription = listener.subscription;
+    };
+
+    init();
+    return () => authSubscription?.unsubscribe();
   }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -71,13 +85,18 @@ export default function Registration() {
     setIsLoggingIn(true);
     setLoginError(null);
     try {
-      if (authMode === 'register') {
-        const user = await registerWithEmail(authEmail, authPassword);
-        setUser(user);
-      } else {
-        const user = await loginWithEmail(authEmail, authPassword);
-        setUser(user);
+      const result = authMode === 'register'
+        ? await signUp(authEmail, authPassword)
+        : await signIn(authEmail, authPassword);
+
+      if (result.error) throw result.error;
+
+      const sessionUser = result.data.session?.user ?? result.data.user ?? null;
+      if (!sessionUser) {
+        throw new Error('Unable to authenticate. Please try again.');
       }
+
+      setUser(sessionUser);
       setNeedsAuth(false);
     } catch (err: any) {
       console.error('Auth failed:', err);
@@ -106,31 +125,45 @@ export default function Registration() {
       setSubmitError(null);
       
       try {
-        const registrationId = doc(collection(db, 'registrations')).id;
+        const registrationId = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const attachmentUrls: string[] = [];
-        
-        // Upload documents if any
+
         if (data.documents && data.documents.length > 0) {
           for (let i = 0; i < data.documents.length; i++) {
             const file = data.documents[i];
-            const storageRef = ref(storage, `registrations/${registrationId}/${file.name}`);
-            await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(storageRef);
-            attachmentUrls.push(downloadURL);
+            const filePath = `${registrationId}/${file.name}`;
+            const { error: uploadError } = await supabase.storage
+              .from(bucketName)
+              .upload(filePath, file, { upsert: false });
+
+            if (uploadError) {
+              throw uploadError;
+            }
+
+            const { data: signedData, error: signedError } = await supabase.storage
+              .from(bucketName)
+              .createSignedUrl(filePath, 60 * 60 * 24);
+
+            if (signedError || !signedData.signedUrl) {
+              throw signedError ?? new Error('Unable to create secure file URL.');
+            }
+
+            attachmentUrls.push(signedData.signedUrl);
           }
         }
-        
-        // Ensure required fields for firestore logic
+
         const docData = {
           ...data,
-          documents: undefined, // don't write FileList directly
+          documents: undefined,
           attachments: attachmentUrls,
-          userId: user.uid,
-          createdAt: serverTimestamp(),
+          user_id: user.id,
+          created_at: new Date().toISOString(),
         };
-        
-        // Attempt firestore
-        await setDoc(doc(db, 'registrations', registrationId), docData);
+
+        const { error: insertError } = await supabase.from('registrations').insert([docData]);
+        if (insertError) {
+          throw insertError;
+        }
 
         setIsSubmitted(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -197,8 +230,7 @@ export default function Registration() {
             {!needsAuth && user && (
               <button 
                 onClick={async () => {
-                  const { logout } = await import('../firebase');
-                  logout();
+                  await signOut();
                 }}
                 className="absolute top-4 right-4 z-20 text-slate-300 hover:text-white text-sm font-medium transition-colors bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-md"
               >

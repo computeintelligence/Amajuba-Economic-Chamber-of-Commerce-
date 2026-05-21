@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { CloudUpload, CircleCheck, ChevronRight, ChevronLeft, User, Briefcase, Tags, FileText, Loader2 } from 'lucide-react';
+import { CloudUpload, CircleCheck, ChevronRight, ChevronLeft, User, Briefcase, Tags, FileText, Loader2, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from '../components/Logo';
-import { bucketName, getSession, onAuthStateChange, signIn, signUp, signOut, supabase } from '../supabase';
+import { bucketName, getSession, onAuthStateChange, signIn, signUp, signInWithGoogle, signOut, supabase } from '../supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 type RegistrationData = {
@@ -300,6 +300,34 @@ export default function Registration() {
                     {authMode === 'login' ? 'Sign In' : 'Sign Up'}
                   </button>
                 </form>
+
+                <div className="mt-6 flex items-center gap-3 text-slate-500">
+                  <span className="flex-1 h-px bg-slate-200" />
+                  <span className="text-sm">or continue with</span>
+                  <span className="flex-1 h-px bg-slate-200" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setLoginError(null);
+                    setIsLoggingIn(true);
+                    try {
+                      const { error } = await signInWithGoogle();
+                      if (error) throw error;
+                    } catch (error: any) {
+                      console.error('Google sign in error', error);
+                      setLoginError(error?.message || 'Unable to sign in with Google.');
+                    } finally {
+                      setIsLoggingIn(false);
+                    }
+                  }}
+                  disabled={isLoggingIn}
+                  className="mt-4 w-full border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 rounded-md py-3 px-4 font-semibold flex items-center justify-center gap-2 disabled:opacity-70 transition-colors"
+                >
+                  <Globe className="w-4 h-4" />
+                  Continue with Google
+                </button>
                 
                 <div className="mt-6 text-slate-600">
                   {authMode === 'login' ? (

@@ -218,7 +218,7 @@ export default function Registration() {
           created_at: new Date().toISOString(),
         };
 
-        const { error: insertError } = await supabase.from('registrations').insert([docData]);
+        const { error: insertError } = await supabase.from('public.registrations').insert([docData]);
         if (insertError) {
           throw insertError;
         }

@@ -1,8 +1,8 @@
-import { createClient, type Session, type User } from '@supabase/supabase-js';
+import { createClient, type Session } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-const storageBucket = (import.meta.env.VITE_SUPABASE_STORAGE_BUCKET as string) || 'registrations';
+const supabaseUrl = ((import.meta as any).env?.VITE_SUPABASE_URL as string) || '';
+const supabaseAnonKey = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string) || '';
+const storageBucket = ((import.meta as any).env?.VITE_SUPABASE_STORAGE_BUCKET as string) || 'Registrations';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase environment variables are not defined. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local.');

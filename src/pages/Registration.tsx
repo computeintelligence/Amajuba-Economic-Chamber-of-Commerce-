@@ -210,11 +210,10 @@ export default function Registration() {
           }
         }
 
+        const { altPhone, documents, ...payload } = data;
         const docData = {
-          ...data,
-          applicant_alternate_phone_number: data.altPhone ?? null,
-          altPhone: undefined,
-          documents: undefined,
+          ...payload,
+          applicant_alternate_phone_number: altPhone ?? null,
           attachments: attachmentUrls,
           user_id: user.id,
           created_at: new Date().toISOString(),

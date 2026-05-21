@@ -212,6 +212,8 @@ export default function Registration() {
 
         const docData = {
           ...data,
+          applicant_alternate_phone_number: data.altPhone ?? null,
+          altPhone: undefined,
           documents: undefined,
           attachments: attachmentUrls,
           user_id: user.id,

@@ -7,22 +7,22 @@ import { bucketName, getSession, onAuthStateChange, signIn, signUp, signInWithGo
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 type RegistrationData = {
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   dob: string;
   gender: string;
   email: string;
   phone: string;
-  altPhone?: string;
+  applicant_alternate_phone_number?: string;
   
-  businessName?: string;
-  registrationNumber?: string;
-  typeOfBusiness?: string;
+  business_name?: string;
+  registration_number?: string;
+  type_of_business?: string;
   industry?: string;
-  businessAddress?: string;
+  business_address?: string;
   employees?: string;
   
-  membershipCategory: string;
+  membership_category: string;
   motivation: string;
   
   docs_id: boolean;
@@ -32,7 +32,7 @@ type RegistrationData = {
   documents: FileList;
   
   signature: string;
-  signatureDate: string;
+  signature_date: string;
 };
 
 export default function Registration() {
@@ -210,10 +210,10 @@ export default function Registration() {
           }
         }
 
-        const { altPhone, documents, ...payload } = data;
+        const { applicant_alternate_phone_number, documents, ...payload } = data;
         const docData = {
           ...payload,
-          applicant_alternate_phone_number: altPhone ?? null,
+          applicant_alternate_phone_number: applicant_alternate_phone_number ?? null,
           attachments: attachmentUrls,
           user_id: user.id,
           created_at: new Date().toISOString(),
@@ -456,13 +456,13 @@ export default function Registration() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">First Name <span className="text-red-500">*</span></label>
-                        <input type="text" {...register("firstName", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
-                        {errors.firstName && <span className="text-red-500 text-xs">Required</span>}
+                        <input type="text" {...register("first_name", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        {errors.first_name && <span className="text-red-500 text-xs">Required</span>}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Last Name <span className="text-red-500">*</span></label>
-                        <input type="text" {...register("lastName", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
-                        {errors.lastName && <span className="text-red-500 text-xs">Required</span>}
+                        <input type="text" {...register("last_name", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        {errors.last_name && <span className="text-red-500 text-xs">Required</span>}
                       </div>
                     </div>
 
@@ -508,7 +508,7 @@ export default function Registration() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Alternative Phone Number</label>
-                        <input type="tel" placeholder="(000) 000-0000" {...register("altPhone")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        <input type="tel" placeholder="(000) 000-0000" {...register("applicant_alternate_phone_number")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
                       </div>
                     </div>
                   </motion.div>
@@ -526,18 +526,18 @@ export default function Registration() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Business Name</label>
-                        <input type="text" {...register("businessName")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        <input type="text" {...register("business_name")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Registration Number</label>
-                        <input type="text" {...register("registrationNumber")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        <input type="text" {...register("registration_number")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Type of Business</label>
-                        <input type="text" {...register("typeOfBusiness")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        <input type="text" {...register("type_of_business")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Industry/Sector</label>
@@ -548,7 +548,7 @@ export default function Registration() {
                     <div className="grid grid-cols-1 gap-6 mt-6">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Business Address</label>
-                        <input type="text" {...register("businessAddress")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        <input type="text" {...register("business_address")} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
                       </div>
                       <div className="md:w-1/2 md:pr-3">
                         <label className="block text-sm font-medium text-slate-700 mb-1">Number of Employees</label>
@@ -572,12 +572,12 @@ export default function Registration() {
                       <div className="space-y-3">
                         {['Individual Member', 'Small Business Member', 'Corporate Member', 'Youth/Student Member', 'Non-Profit Organization'].map((cat) => (
                           <label key={cat} className="flex items-center gap-3 cursor-pointer">
-                            <input type="radio" value={cat} {...register("membershipCategory", { required: true })} className="text-chamber-blue focus:ring-chamber-blue w-4 h-4" />
+                            <input type="radio" value={cat} {...register("membership_category", { required: true })} className="text-chamber-blue focus:ring-chamber-blue w-4 h-4" />
                             <span className="text-slate-700">{cat}</span>
                           </label>
                         ))}
                       </div>
-                      {errors.membershipCategory && <span className="text-red-500 text-xs block mt-2">Please select a category</span>}
+                      {errors.membership_category && <span className="text-red-500 text-xs block mt-2">Please select a category</span>}
                     </div>
 
                     <SectionHeader number="4" title="Motivation for Joining" />
@@ -709,8 +709,8 @@ export default function Registration() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Date <span className="text-red-500">*</span></label>
-                        <input type="date" {...register("signatureDate", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
-                        {errors.signatureDate && <span className="text-red-500 text-xs">Required</span>}
+                        <input type="date" {...register("signature_date", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        {errors.signature_date && <span className="text-red-500 text-xs">Required</span>}
                       </div>
                     </div>
                   </motion.div>

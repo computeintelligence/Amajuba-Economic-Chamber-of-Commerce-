@@ -24,6 +24,8 @@ export default function Footer() {
               <li><Link to="/about" className="hover:text-chamber-gold transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-chamber-gold transition-colors">Contact</Link></li>
               <li><Link to="/registration" className="hover:text-chamber-gold transition-colors">Membership Registration</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-chamber-gold transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="hover:text-chamber-gold transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
 

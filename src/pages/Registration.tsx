@@ -85,22 +85,43 @@ export default function Registration() {
     setIsLoggingIn(true);
     setLoginError(null);
     try {
+      if (!authEmail || !authPassword) {
+        throw new Error('Please enter both email and password.');
+      }
+
       const result = authMode === 'register'
         ? await signUp(authEmail, authPassword)
         : await signIn(authEmail, authPassword);
 
-      if (result.error) throw result.error;
+      // Handle Supabase error response
+      if (result.error) {
+        console.error('Supabase auth error:', result.error);
+        throw new Error(result.error.message || 'Authentication failed');
+      }
 
-      const sessionUser = result.data.session?.user ?? result.data.user ?? null;
+      // Extract user from the response
+      const sessionUser = result.data?.session?.user || result.data?.user;
+      
       if (!sessionUser) {
-        throw new Error('Unable to authenticate. Please try again.');
+        // For sign-up, user might not have a session if email confirmation is required
+        if (authMode === 'register') {
+          setLoginError('Please check your email to confirm your account before signing in.');
+          setAuthMode('login');
+          setAuthPassword('');
+        } else {
+          throw new Error('Authentication failed. Please try again.');
+        }
+        return;
       }
 
       setUser(sessionUser);
       setNeedsAuth(false);
+      setAuthEmail('');
+      setAuthPassword('');
     } catch (err: any) {
-      console.error('Auth failed:', err);
-      setLoginError(err.message || 'Authentication failed. Please check your credentials.');
+      console.error('Auth error:', err);
+      const errorMessage = err?.message || 'Authentication failed. Please check your credentials and try again.';
+      setLoginError(errorMessage);
     } finally {
       setIsLoggingIn(false);
     }
@@ -314,11 +335,15 @@ export default function Registration() {
                     setIsLoggingIn(true);
                     try {
                       const { error } = await signInWithGoogle();
-                      if (error) throw error;
+                      if (error) {
+                        console.error('Google sign-in error:', error);
+                        throw error;
+                      }
+                      // Note: Google OAuth will redirect to the /registration page
+                      // and the auth state listener will handle the session update
                     } catch (error: any) {
-                      console.error('Google sign in error', error);
-                      setLoginError(error?.message || 'Unable to sign in with Google.');
-                    } finally {
+                      console.error('Google sign-in failed:', error);
+                      setLoginError(error?.message || 'Unable to sign in with Google. Please try again.');
                       setIsLoggingIn(false);
                     }
                   }}

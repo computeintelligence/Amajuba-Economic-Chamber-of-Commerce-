@@ -9,7 +9,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 type RegistrationData = {
   first_name: string;
   last_name: string;
-  dob: string;
+  applicant_date_of_birth: string;
   gender: string;
   email: string;
   phone: string;
@@ -469,8 +469,8 @@ export default function Registration() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth <span className="text-red-500">*</span></label>
-                        <input type="date" {...register("dob", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
-                        {errors.dob && <span className="text-red-500 text-xs">Required</span>}
+                        <input type="date" {...register("applicant_date_of_birth", { required: true })} className="w-full rounded-md border-slate-300 border px-4 py-3 focus:outline-none focus:border-chamber-blue focus:ring-1 focus:ring-chamber-blue" />
+                        {errors.applicant_date_of_birth && <span className="text-red-500 text-xs">Required</span>}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-3">Gender <span className="text-red-500">*</span></label>

@@ -5,38 +5,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import Logo from '../components/Logo';
 import { bucketName, getSession, onAuthStateChange, signIn, signUp, signInWithGoogle, signOut, supabase } from '../supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { RegistrationFormData } from '../types/registration';
+import { toRegistrationInsert } from '../types/registration';
 
-type RegistrationData = {
-  first_name: string;
-  last_name: string;
-  applicant_date_of_birth: string;
-  gender: string;
-  email: string;
-  phone: string;
-  applicant_alternate_phone_number?: string;
-  
-  business_name?: string;
-  registration_number?: string;
-  type_of_business?: string;
-  industry?: string;
-  business_address?: string;
-  employees?: string;
-  
-  membership_category: string;
-  motivation: string;
-  
-  docs_id: boolean;
-  docs_registration: boolean;
-  docs_residence: boolean;
-  docs_profile: boolean;
-  documents: FileList;
-  
-  signature: string;
-  signature_date: string;
-};
+
 
 export default function Registration() {
-  const { register, setValue, trigger, handleSubmit, formState: { errors } } = useForm<RegistrationData>();
+  const { register, setValue, trigger, handleSubmit, formState: { errors } } = useForm<RegistrationFormData>();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const documentsInputRef = useRef<HTMLInputElement | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -162,7 +137,7 @@ export default function Registration() {
     await trigger('documents');
   };
 
-  const onSubmit = async (data: RegistrationData) => {
+  const onSubmit = async (data: RegistrationFormData) => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -210,11 +185,9 @@ export default function Registration() {
           }
         }
 
-        const { applicant_alternate_phone_number, documents, ...payload } = data;
+        const registrationPayload = toRegistrationInsert(data, attachmentUrls);
         const docData = {
-          ...payload,
-          applicant_alternate_phone_number: applicant_alternate_phone_number ?? null,
-          attachments: attachmentUrls,
+          ...registrationPayload,
           user_id: user.id,
           created_at: new Date().toISOString(),
         };

@@ -186,13 +186,8 @@ export default function Registration() {
         }
 
         const registrationPayload = toRegistrationInsert(data, attachmentUrls);
-        const docData = {
-          ...registrationPayload,
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-        };
 
-        const { error: insertError } = await supabase.from('public.registrations').insert([docData]);
+        const { error: insertError } = await supabase.from('registrations').insert([registrationPayload]);
         if (insertError) {
           throw insertError;
         }

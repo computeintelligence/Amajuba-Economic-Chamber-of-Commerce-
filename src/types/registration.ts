@@ -25,31 +25,38 @@ export type RegistrationFormData = {
 };
 
 // What the DB insert expects (JSON payload you send via Supabase)
+// Matches schema: public.registrations table
+// Constraints:
+// - email_address: UNIQUE
+// - gender: IN ('Male', 'Female', 'Other')
+// - membership_category: IN ('Individual Member', 'Small Business Member', 'Corporate Member', 'Youth/Student Member', 'Non-Profit Organization')
+// - application_status: IN ('Pending', 'Under Review', 'Approved', 'Rejected') - defaults to 'Pending'
 export type RegistrationInsert = {
   first_name: string;
   last_name: string;
   date_of_birth: string; // send as "YYYY-MM-DD" (Postgres date)
-  gender: string;
-  email_address: string;
+  gender: string; // 'Male' | 'Female' | 'Other'
+  email_address: string; // unique constraint
   phone_number: string;
-  alternative_phone_number?: string;
-  business_name?: string;
-  registration_number?: string;
-  business_type?: string;
-  industry_sector?: string;
-  business_address?: string;
+  alternative_phone_number?: string | null;
+  business_name?: string | null;
+  registration_number?: string | null;
+  business_type?: string | null;
+  industry_sector?: string | null;
+  business_address?: string | null;
   number_of_employees?: number | null;
-  membership_category: string;
+  membership_category: string; // 'Individual Member' | 'Small Business Member' | 'Corporate Member' | 'Youth/Student Member' | 'Non-Profit Organization'
   motivation_for_joining: string;
-  copy_of_id_or_passport: boolean;
-  business_registration_documents: boolean;
-  proof_of_residence: boolean;
-  company_profile: boolean;
-  uploaded_documents?: string[]; // <= must be string[] (filenames/paths) AFTER upload
+  copy_of_id_or_passport?: boolean | null; // defaults to false
+  business_registration_documents?: boolean | null; // defaults to false
+  proof_of_residence?: boolean | null; // defaults to false
+  company_profile?: boolean | null; // defaults to false
+  uploaded_documents?: string[] | null; // array of document URLs/paths
+  declaration_accepted?: boolean | null; // defaults to true
   applicant_signature: string;
-  signature_date: string;
-  // Optional if you let defaults handle it
-  // application_status?: string;
+  signature_date: string; // send as "YYYY-MM-DD" (Postgres date)
+  application_status?: string; // defaults to 'Pending'; 'Pending' | 'Under Review' | 'Approved' | 'Rejected'
+  // created_at and updated_at are handled server-side automatically
 };
 
 // Convert form data -> DB payload (uploaded_documents needs separate upload step)
